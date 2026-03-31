@@ -61,143 +61,87 @@ function shuffle(list) {
   return copy;
 }
 
-function buildNumericQuestion(level, variant) {
-  if (level <= 2) {
-    const start = 8 + level * 3 + variant;
-    const step = 2 + level + (variant % 2);
-    const sequence = [start, start + step, start + step * 2, start + step * 3];
-    const answer = String(start + step * 4);
-    return {
-      category: "Numerisk",
-      title: "Finn neste tall",
-      prompt: `Hvilket tall kommer videre i rekken ${sequence.join(", ")}?`,
-      options: shuffle([answer, String(Number(answer) + step), String(Number(answer) - 2), String(Number(answer) + 5)]),
-      answer,
-      difficulty: level,
-      recommendedTime: 35 + level * 10
-    };
-  }
+const QUESTION_BANK = {
+  Numerisk: [
+    { id: "n1", difficulty: 1, recommendedTime: 35, title: "Finn neste tall", prompt: "Hvilket tall kommer videre i rekken 12, 15, 18, 21, ...?", options: ["24", "23", "25", "27"], answer: "24" },
+    { id: "n2", difficulty: 1, recommendedTime: 35, title: "Finn neste tall", prompt: "Hvilket tall kommer videre i rekken 4, 9, 16, 25, ...?", options: ["36", "30", "35", "49"], answer: "36" },
+    { id: "n3", difficulty: 2, recommendedTime: 40, title: "Mønster i rekken", prompt: "Hvilket tall kommer videre i rekken 3, 6, 12, 24, ...?", options: ["48", "30", "36", "42"], answer: "48" },
+    { id: "n4", difficulty: 2, recommendedTime: 40, title: "Prosentregning", prompt: "Hva er 25 % av 240?", options: ["60", "48", "72", "80"], answer: "60" },
+    { id: "n5", difficulty: 3, recommendedTime: 45, title: "Tallfølge med skiftende hopp", prompt: "Hvilket tall kommer videre i rekken 14, 13, 11, 8, 4, ...?", options: ["-1", "0", "1", "2"], answer: "-1" },
+    { id: "n6", difficulty: 3, recommendedTime: 45, title: "Gjennomsnitt", prompt: "Hva er gjennomsnittet av 14, 18, 23 og 25?", options: ["20", "19", "21", "22"], answer: "20" },
+    { id: "n7", difficulty: 4, recommendedTime: 50, title: "Forhold og andeler", prompt: "Forholdet mellom røde og blå perler er 3:2. Hvis det er 25 perler totalt, hvor mange er blå?", options: ["10", "12", "15", "8"], answer: "10" },
+    { id: "n8", difficulty: 4, recommendedTime: 50, title: "Fart og avstand", prompt: "Et tog kjører 180 km på 3 timer i samme fart. Hvor langt kjører det på 4,5 timer?", options: ["270 km", "240 km", "300 km", "225 km"], answer: "270 km" },
+    { id: "n9", difficulty: 5, recommendedTime: 55, title: "Mønster i rekken", prompt: "Hvilket tall kommer videre i rekken 7, 11, 18, 29, 47, ...?", options: ["76", "74", "78", "82"], answer: "76" },
+    { id: "n10", difficulty: 5, recommendedTime: 55, title: "Tallfølge", prompt: "Hvilket tall kommer videre i rekken 2, 6, 12, 20, 30, ...?", options: ["42", "40", "44", "46"], answer: "42" },
+    { id: "n11", difficulty: 6, recommendedTime: 60, title: "Pris etter rabatt", prompt: "En jakke koster 800 kr. Den settes ned med 15 %. Hva blir ny pris?", options: ["680 kr", "720 kr", "660 kr", "700 kr"], answer: "680 kr" },
+    { id: "n12", difficulty: 6, recommendedTime: 60, title: "Mønster i rekken", prompt: "Hvilket tall kommer videre i rekken 5, 9, 17, 33, ...?", options: ["65", "57", "61", "67"], answer: "65" },
+    { id: "n13", difficulty: 7, recommendedTime: 65, title: "Lønn og prosent", prompt: "En årslønn på 500 000 kr øker med 8 %. Hva blir ny årslønn?", options: ["540 000 kr", "508 000 kr", "545 000 kr", "560 000 kr"], answer: "540 000 kr" },
+    { id: "n14", difficulty: 7, recommendedTime: 65, title: "Brøk og tid", prompt: "En oppgave tar 3/5 av en time. Hvor mange minutter er det?", options: ["36", "30", "40", "45"], answer: "36" },
+    { id: "n15", difficulty: 8, recommendedTime: 70, title: "Flere trinn", prompt: "Et tall dobles og deretter trekkes 7 fra. Resultatet er 29. Hva var tallet?", options: ["18", "11", "16", "14"], answer: "18" },
+    { id: "n16", difficulty: 8, recommendedTime: 70, title: "Tallfølge med flere regler", prompt: "Hvilket tall kommer videre i rekken 81, 27, 9, 3, ...?", options: ["1", "0", "6", "9"], answer: "1" }
+  ],
+  Verbal: [
+    { id: "v1", difficulty: 1, recommendedTime: 35, title: "Ordrelasjon", prompt: "Hvilket ord passer best: bok er til lese som gaffel er til ...", options: ["spise", "tegne", "skrive", "vaske"], answer: "spise" },
+    { id: "v2", difficulty: 1, recommendedTime: 35, title: "Finn avvikeren", prompt: "Hvilket ord skiller seg ut? eple, pære, plomme, gulrot", options: ["gulrot", "eple", "pære", "plomme"], answer: "gulrot" },
+    { id: "v3", difficulty: 2, recommendedTime: 40, title: "Synonym", prompt: "Hvilket ord betyr omtrent det samme som «presis»?", options: ["nøyaktig", "rask", "høflig", "kraftig"], answer: "nøyaktig" },
+    { id: "v4", difficulty: 2, recommendedTime: 40, title: "Ordrelasjon", prompt: "Hvilket ord passer best: kompass er til retning som termometer er til ...", options: ["temperatur", "styrke", "avstand", "fart"], answer: "temperatur" },
+    { id: "v5", difficulty: 3, recommendedTime: 45, title: "Antonym", prompt: "Hvilket ord betyr det motsatte av «midlertidig»?", options: ["permanent", "kort", "uklar", "enkel"], answer: "permanent" },
+    { id: "v6", difficulty: 3, recommendedTime: 45, title: "Finn riktig par", prompt: "Hvilket ordpar har samme relasjon som arkitekt : bygning?", options: ["komponist : musikk", "sjåfør : vei", "forfatter : blyant", "svømmer : vann"], answer: "komponist : musikk" },
+    { id: "v7", difficulty: 4, recommendedTime: 50, title: "Setningsforståelse", prompt: "Velg ordet som passer best i setningen: «Hun var så ___ i arbeidet sitt at ingen detaljer ble oversett.»", options: ["grundig", "tilfeldig", "stille", "kort"], answer: "grundig" },
+    { id: "v8", difficulty: 4, recommendedTime: 50, title: "Finn avvikeren", prompt: "Hvilket ord skiller seg ut? violin, cello, piano, trompet", options: ["piano", "violin", "cello", "trompet"], answer: "piano" },
+    { id: "v9", difficulty: 5, recommendedTime: 55, title: "Begrepsforståelse", prompt: "Hvilket ord beskriver best noe som er «omfattende»?", options: ["vidtrekkende", "midlertidig", "skjult", "presist"], answer: "vidtrekkende" },
+    { id: "v10", difficulty: 5, recommendedTime: 55, title: "Ordrelasjon", prompt: "Hvilket ord passer best: frø er til plante som idé er til ...", options: ["prosjekt", "møte", "regel", "papir"], answer: "prosjekt" },
+    { id: "v11", difficulty: 6, recommendedTime: 60, title: "Språklig analogi", prompt: "Hvilket ord passer best: strategi er til plan som improvisasjon er til ...", options: ["spontanitet", "analyse", "måling", "forsinkelse"], answer: "spontanitet" },
+    { id: "v12", difficulty: 6, recommendedTime: 60, title: "Presis betydning", prompt: "Hvilket ord betyr omtrent det samme som «begrense»?", options: ["avgrense", "forklare", "utvide", "forsterke"], answer: "avgrense" },
+    { id: "v13", difficulty: 7, recommendedTime: 65, title: "Begrepspar", prompt: "Hvilket ordpar har nærmest samme forhold som kalender : dato?", options: ["klokke : tid", "kart : bil", "komfyr : varme", "blyant : papir"], answer: "klokke : tid" },
+    { id: "v14", difficulty: 7, recommendedTime: 65, title: "Språknyanse", prompt: "Hvilket ord passer best dersom noe er både gjennomtenkt og velbegrunnet?", options: ["reflektert", "hastig", "uklar", "ensidig"], answer: "reflektert" },
+    { id: "v15", difficulty: 8, recommendedTime: 70, title: "Analogisk resonnement", prompt: "Hvilket ord passer best: pilot er til cockpit som kokk er til ...", options: ["kjøkken", "lager", "resepsjon", "garasje"], answer: "kjøkken" },
+    { id: "v16", difficulty: 8, recommendedTime: 70, title: "Begrepsforståelse", prompt: "Hvilket ord beskriver best noe som er «konsekvent»?", options: ["sammenhengende", "tilfeldig", "urolig", "sjeldent"], answer: "sammenhengende" }
+  ],
+  Logisk: [
+    { id: "l1", difficulty: 1, recommendedTime: 35, title: "Mønstergjenkjenning", prompt: "Hva kommer videre i mønsteret: sirkel, trekant, sirkel, trekant, ...", options: ["sirkel", "trekant", "kvadrat", "stjerne"], answer: "sirkel" },
+    { id: "l2", difficulty: 1, recommendedTime: 35, title: "Mønstergjenkjenning", prompt: "Hva kommer videre i mønsteret: rød, blå, grønn, rød, blå, ...", options: ["grønn", "rød", "gul", "lilla"], answer: "grønn" },
+    { id: "l3", difficulty: 2, recommendedTime: 40, title: "Bokstavmønster", prompt: "Hva kommer videre i rekken A, C, E, G, ...?", options: ["I", "H", "J", "K"], answer: "I" },
+    { id: "l4", difficulty: 2, recommendedTime: 40, title: "Mønstergjenkjenning", prompt: "Hva kommer videre i mønsteret: 2, 4, 8, 16, ...", options: ["32", "24", "18", "20"], answer: "32" },
+    { id: "l5", difficulty: 3, recommendedTime: 45, title: "Rekkefølge", prompt: "Anna er eldre enn Bo, og Bo er eldre enn Camilla. Hvem er yngst?", options: ["Camilla", "Anna", "Bo", "Kan ikke avgjøres"], answer: "Camilla" },
+    { id: "l6", difficulty: 3, recommendedTime: 45, title: "Plassering", prompt: "Fire personer står i kø. Dina står foran Emil, men bak Filip. Hvem må stå foran Dina?", options: ["Filip", "Emil", "Ingen", "Begge"], answer: "Filip" },
+    { id: "l7", difficulty: 4, recommendedTime: 50, title: "Logisk konklusjon", prompt: "Alle analytikere er nøyaktige. Nora er analytiker. Hva følger logisk?", options: ["Nora er nøyaktig", "Alle nøyaktige er analytikere", "Nora er leder", "Ingen sikker konklusjon"], answer: "Nora er nøyaktig" },
+    { id: "l8", difficulty: 4, recommendedTime: 50, title: "Logisk konklusjon", prompt: "Ingen prosjekter leveres uten plan. Team X leverte prosjektet sitt. Hva følger logisk?", options: ["Team X hadde en plan", "Planen var perfekt", "Alle team leverer", "Ingen sikker konklusjon"], answer: "Team X hadde en plan" },
+    { id: "l9", difficulty: 5, recommendedTime: 55, title: "Sann/usann", prompt: "Hvis alle tester er tidsbestemte, og denne oppgaven er en test, hva vet du da?", options: ["Oppgaven er tidsbestemt", "Oppgaven er enkel", "Alle tidsbestemte ting er tester", "Oppgaven kan hoppes over"], answer: "Oppgaven er tidsbestemt" },
+    { id: "l10", difficulty: 5, recommendedTime: 55, title: "Utelukkelse", prompt: "Tre personer skal sitte ved siden av hverandre: Kari, Lars og Mona. Mona kan ikke sitte i midten. Hvilken plassering er mulig?", options: ["Kari, Lars, Mona", "Lars, Mona, Kari", "Mona, Lars, Kari", "Kari, Mona, Lars"], answer: "Kari, Lars, Mona" },
+    { id: "l11", difficulty: 6, recommendedTime: 60, title: "Planlegging", prompt: "Et møte må holdes før rapporten skrives, og rapporten må skrives før presentasjonen. Hva må skje først?", options: ["Møtet", "Rapporten", "Presentasjonen", "Det kan ikke avgjøres"], answer: "Møtet" },
+    { id: "l12", difficulty: 6, recommendedTime: 60, title: "Logisk resonnement", prompt: "Alle kandidater som trener jevnlig forbedrer seg. Amir trener jevnlig. Hva følger logisk?", options: ["Amir forbedrer seg", "Alle som forbedrer seg trener jevnlig", "Amir består testen", "Ingen sikker konklusjon"], answer: "Amir forbedrer seg" },
+    { id: "l13", difficulty: 7, recommendedTime: 65, title: "Betinget resonnement", prompt: "Hvis det regner, blir bakken våt. Bakken er ikke våt. Hva kan du konkludere?", options: ["Det regner ikke", "Det regner", "Det har regnet tidligere", "Ingen sikker konklusjon"], answer: "Det regner ikke" },
+    { id: "l14", difficulty: 7, recommendedTime: 65, title: "Kategorilogikk", prompt: "Alle roser er blomster. Noen blomster visner raskt. Hvilken påstand må være sann?", options: ["Roser er blomster", "Alle blomster er roser", "Noen roser visner raskt", "Ingen blomster visner"], answer: "Roser er blomster" },
+    { id: "l15", difficulty: 8, recommendedTime: 70, title: "Flere regler samtidig", prompt: "Per kommer etter Oda i køen, men før Sara. Lars står foran Oda. Hvem står bakerst av disse fire?", options: ["Sara", "Per", "Oda", "Lars"], answer: "Sara" },
+    { id: "l16", difficulty: 8, recommendedTime: 70, title: "Logisk konklusjon", prompt: "Ingen rapporter sendes uten kvalitetssjekk. Denne rapporten ble sendt. Hva kan du slutte?", options: ["Rapporten ble kvalitetssjekket", "Rapporten var feilfri", "Alle kvalitetssjekker fører til sending", "Rapporten var kort"], answer: "Rapporten ble kvalitetssjekket" }
+  ]
+};
 
-  if (level <= 5) {
-    const base = 12 + level * 4 + variant;
-    const increments = [3 + (variant % 2), 6 + (variant % 3), 12 + (variant % 4)];
-    const sequence = [base];
-    increments.forEach((value) => sequence.push(sequence[sequence.length - 1] + value));
-    const answerValue = sequence[sequence.length - 1] + (24 + variant * 2);
-    const answer = String(answerValue);
-    return {
-      category: "Numerisk",
-      title: "Se mønsteret",
-      prompt: `Økningen endrer seg for hvert steg. Hvilket tall kommer etter ${sequence.join(", ")}?`,
-      options: shuffle([answer, String(answerValue + 6), String(answerValue - 3), String(answerValue + 12)]),
-      answer,
-      difficulty: level,
-      recommendedTime: 45 + level * 10
-    };
-  }
-
-  const a = 2 + level + (variant % 2);
-  const b = 3 + level;
-  const c = 5 + level + variant;
-  const answerValue = a * b + c * 2;
-  const answer = String(answerValue);
+function cloneQuestion(question, category) {
   return {
-    category: "Numerisk",
-    title: "Hvilket svar er riktig?",
-    prompt: `Regn ut uttrykket ${a} x ${b} + ${c} x 2.`,
-    options: shuffle([answer, String(answerValue + level), String(answerValue - 4), String(answerValue + 6)]),
-    answer,
-    difficulty: level,
-    recommendedTime: 55 + level * 8
+    id: question.id,
+    category,
+    difficulty: question.difficulty,
+    recommendedTime: question.recommendedTime,
+    title: question.title,
+    prompt: question.prompt,
+    answer: question.answer,
+    options: shuffle([...question.options])
   };
 }
 
-function buildVerbalQuestion(level, variant) {
-  const analogySets = [
-    { stem: "bok er til lese som gaffel er til", answer: "spise", distractors: ["skrive", "kutte", "vaske"] },
-    { stem: "kompass er til retning som termometer er til", answer: "temperatur", distractors: ["tid", "vekt", "vind"] },
-    { stem: "arkitekt er til bygning som komponist er til", answer: "musikk", distractors: ["teater", "maling", "poesi"] },
-    { stem: "frø er til plante som idé er til", answer: "prosjekt", distractors: ["papir", "møte", "regel"] },
-    { stem: "mikroskop er til detaljer som kikkert er til", answer: "avstand", distractors: ["lyd", "farge", "vekt"] },
-    { stem: "strategi er til plan som improvisasjon er til", answer: "spontanitet", distractors: ["måling", "forsinkelse", "analyse"] },
-    { stem: "pilot er til cockpit som kokk er til", answer: "kjøkken", distractors: ["resepsjon", "lager", "garasje"] },
-    { stem: "kalender er til dato som klokke er til", answer: "tid", distractors: ["retning", "temperatur", "fart"] }
-  ];
-  const item = analogySets[(level + variant - 1) % analogySets.length];
-  return {
-    category: "Verbal",
-    title: level <= 3 ? "Ordforståelse" : "Språklig analogi",
-    prompt: `Velg ordet som best fullfører analogien: ${item.stem} ...`,
-    options: shuffle([item.answer, ...item.distractors]),
-    answer: item.answer,
-    difficulty: level,
-    recommendedTime: 35 + level * 8
-  };
-}
-
-function buildLogicQuestion(level, variant) {
-  if (level <= 3) {
-    const patterns = [
-      { prompt: "sirkel, trekant, sirkel, trekant, ...", answer: "sirkel", distractors: ["trekant", "kvadrat", "stjerne"] },
-      { prompt: "rød, blå, grønn, rød, blå, ...", answer: "grønn", distractors: ["rød", "gul", "lilla"] },
-      { prompt: "2, 4, 8, 16, ...", answer: "32", distractors: ["24", "18", "20"] },
-      { prompt: "firkant, femkant, sekskant, ...", answer: "syvkant", distractors: ["trekant", "åttekant", "sirkel"] }
-    ];
-    const item = patterns[(level + variant - 1) % patterns.length];
-    return {
-      category: "Logisk",
-      title: "Mønstergjenkjenning",
-      prompt: `Hva kommer videre i mønsteret: ${item.prompt}`,
-      options: shuffle([item.answer, ...item.distractors]),
-      answer: item.answer,
-      difficulty: level,
-      recommendedTime: 40 + level * 8
-    };
-  }
-
-  const statements = [
-    {
-      prompt: "Alle analytikere er nøyaktige. Nora er analytiker. Hva kan du konkludere?",
-      answer: "Nora er nøyaktig",
-      distractors: ["Alle nøyaktige er analytikere", "Nora er leder", "Ingen sikre konklusjoner"]
-    },
-    {
-      prompt: "Ingen prosjekter blir levert uten plan. Team X leverte prosjektet sitt. Hva følger logisk?",
-      answer: "Team X hadde en plan",
-      distractors: ["Planen var perfekt", "Alle team leverer", "Team X er større enn andre team"]
-    },
-    {
-      prompt: "Hvis alle tester er tidsbestemte, og denne oppgaven er en test, hva vet du da?",
-      answer: "Oppgaven er tidsbestemt",
-      distractors: ["Oppgaven er enkel", "Alle tidsbestemte ting er tester", "Oppgaven kan hoppes over"]
-    },
-    {
-      prompt: "Alle kandidater som trener jevnlig forbedrer seg. Amir trener jevnlig. Hva følger logisk?",
-      answer: "Amir forbedrer seg",
-      distractors: ["Alle som forbedrer seg trener jevnlig", "Amir består testen", "Ingen sikker konklusjon"]
-    },
-    {
-      prompt: "Ingen rapporter sendes uten kvalitetssjekk. Denne rapporten ble sendt. Hva kan du slutte?",
-      answer: "Rapporten ble kvalitetssjekket",
-      distractors: ["Rapporten var feilfri", "Alle kvalitetssjekker fører til sending", "Rapporten var kort"]
-    }
-  ];
-  const item = statements[(level + variant - 4) % statements.length];
-  return {
-    category: "Logisk",
-    title: "Velg den beste konklusjonen",
-    prompt: item.prompt,
-    options: shuffle([item.answer, ...item.distractors]),
-    answer: item.answer,
-    difficulty: level,
-    recommendedTime: 50 + level * 8
-  };
-}
-
-function buildQuestion(category, level, variant) {
-  if (category === "Numerisk") return buildNumericQuestion(level, variant);
-  if (category === "Verbal") return buildVerbalQuestion(level, variant);
-  return buildLogicQuestion(level, variant);
+function pickQuestion(category, targetDifficulty, usedIds) {
+  const available = QUESTION_BANK[category].filter((question) => !usedIds.has(question.id));
+  const ranked = available.sort((left, right) => {
+    const leftDiff = Math.abs(left.difficulty - targetDifficulty);
+    const rightDiff = Math.abs(right.difficulty - targetDifficulty);
+    if (leftDiff !== rightDiff) return leftDiff - rightDiff;
+    return left.difficulty - right.difficulty;
+  });
+  const choice = ranked[0] || QUESTION_BANK[category][0];
+  usedIds.add(choice.id);
+  return cloneQuestion(choice, category);
 }
 
 function getPracticeCategories(focusCategory) {
@@ -213,12 +157,18 @@ function getPracticeCategories(focusCategory) {
 }
 
 function generateQuestions(mode, focusCategory) {
+  const usedIds = {
+    Numerisk: new Set(),
+    Verbal: new Set(),
+    Logisk: new Set()
+  };
+
   if (mode === "practice") {
     const categories = getPracticeCategories(focusCategory);
     return PRACTICE_LEVELS.map((level, index) => ({
       id: `practice-${index + 1}`,
       mode,
-      ...buildQuestion(categories[index], level, index)
+      ...pickQuestion(categories[index], level, usedIds[categories[index]])
     }));
   }
 
@@ -227,7 +177,7 @@ function generateQuestions(mode, focusCategory) {
     return {
       id: `full-${index + 1}`,
       mode,
-      ...buildQuestion(category, level, Math.floor(index / CATEGORIES.length))
+      ...pickQuestion(category, level, usedIds[category])
     };
   });
 }

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4efe4">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Evnetest">
+  <title>Evnetest Trener</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <p class="eyebrow">Intervju-trening på mobil</p>
+      <h1>Evnetest Trener</h1>
+      <p class="hero-copy">
+        En enkel webapp du kan åpne direkte på iPhone i Safari, uten Expo Go.
+      </p>
+    </header>
+
+    <main class="main-stack">
+      <section class="card">
+        <h2>Brukere</h2>
+        <p>Lag en lokal profil for hver person som skal bruke appen. Alt lagres kun i nettleseren på denne enheten.</p>
+        <div id="profiles-list" class="profile-list"></div>
+        <div class="input-row">
+          <input id="profile-name-input" class="text-input" type="text" placeholder="Nytt navn">
+          <button id="add-profile-btn" class="secondary-btn">Legg til</button>
+        </div>
+      </section>
+
+      <section id="home-screen" class="card screen active">
+        <div class="card-accent"></div>
+        <h2 id="welcome-title">Velg en bruker for å starte</h2>
+        <p id="welcome-copy">Når du har valgt en profil kan du kjøre full test eller en fokusøkt for det du strever mest med.</p>
+
+        <div class="feature-grid">
+          <article>
+            <span>24</span>
+            <p>spørsmål i full test</p>
+          </article>
+          <article>
+            <span>12</span>
+            <p>spørsmål i fokusøkt</p>
+          </article>
+          <article>
+            <span>3</span>
+            <p>kategorier</p>
+          </article>
+        </div>
+
+        <div id="insight-box" class="feedback-block hidden">
+          <h3>Profiloversikt</h3>
+          <p id="insight-text"></p>
+        </div>
+
+        <div class="actions stack">
+          <button id="start-full-btn" class="primary-btn" disabled>Start full test</button>
+          <button id="start-practice-btn" class="secondary-btn wide" disabled>Øv mer på det du sliter med</button>
+        </div>
+      </section>
+
+      <section id="history-screen" class="card screen active">
+        <h2>Historikk</h2>
+        <div id="history-summary" class="feature-grid feature-grid-small"></div>
+        <div id="history-list" class="history-list"></div>
+      </section>
+
+      <section id="quiz-screen" class="card screen">
+        <div class="top-bar">
+          <div>
+            <p id="session-label" class="muted-label">Full test</p>
+            <strong id="progress-text">Spørsmål 1 av 24</strong>
+          </div>
+          <div id="difficulty-pill" class="pill">Nivå 1</div>
+        </div>
+
+        <div class="progress-track" aria-hidden="true">
+          <div id="progress-bar" class="progress-bar"></div>
+        </div>
+
+        <div class="question-meta">
+          <span id="category-chip" class="category-chip">Numerisk</span>
+          <span id="time-chip" class="time-chip">Anbefalt: 45 sek</span>
+        </div>
+
+        <h2 id="question-text" class="question-text"></h2>
+        <p id="question-prompt" class="question-prompt"></p>
+        <div id="options-container" class="options-container"></div>
+
+        <div class="actions">
+          <button id="next-btn" class="primary-btn" disabled>Neste spørsmål</button>
+        </div>
+      </section>
+
+      <section id="result-screen" class="card screen">
+        <div class="card-accent"></div>
+        <p class="eyebrow">Resultat</p>
+        <h2 id="score-heading">Du fikk 0 av 24 riktige</h2>
+        <p id="score-summary" class="result-summary"></p>
+
+        <div class="score-grid">
+          <article>
+            <span id="score-percent">0%</span>
+            <p>treffsikkerhet</p>
+          </article>
+          <article>
+            <span id="best-category">-</span>
+            <p>sterkeste kategori</p>
+          </article>
+          <article>
+            <span id="level-reached">-</span>
+            <p>høyeste nivå</p>
+          </article>
+        </div>
+
+        <div class="feedback-block">
+          <h3>Anbefaling</h3>
+          <p id="feedback-text"></p>
+        </div>
+
+        <div class="actions stack">
+          <button id="practice-from-result-btn" class="primary-btn">Start fokusøkt</button>
+          <button id="restart-full-btn" class="secondary-btn wide">Ta en ny full test</button>
+          <button id="back-home-btn" class="ghost-btn">Tilbake til oversikt</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

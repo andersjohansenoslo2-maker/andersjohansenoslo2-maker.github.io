@@ -1,0 +1,11 @@
+{
+  "name": "Evnetest Trener",
+  "short_name": "Evnetest",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4efe4",
+  "theme_color": "#f4efe4",
+  "lang": "no",
+  "description": "Mobilvennlig app for å øve på intervjurelevante evnetester med stigende vanskelighetsgrad.",
+  "icons": []
+}

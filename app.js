@@ -184,12 +184,307 @@ function cloneQuestion(question, category) {
     title: question.title,
     prompt: question.prompt,
     answer: question.answer,
-    explanation: EXPLANATION_BY_ID[question.id] || "Se etter hovedregelen i oppgaven og test den mot hvert svaralternativ.",
+    explanation: question.explanation || EXPLANATION_BY_ID[question.id] || "Se etter hovedregelen i oppgaven og test den mot hvert svaralternativ.",
     options: shuffle([...question.options])
   };
 }
 
-function pickQuestion(category, targetDifficulty, usedIds) {
+function createOptions(answer, distractors) {
+  return shuffle([answer, ...distractors.map(String)]);
+}
+
+function numericVariant(level, variant) {
+  const templates = [
+    () => {
+      const start = 8 + ((variant * 3) % 9);
+      const step = 2 + (variant % 4);
+      const seq = [start, start + step, start + step * 2, start + step * 3];
+      const answer = String(start + step * 4);
+      return {
+        id: `num-a-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 35 + level * 4,
+        title: "Finn neste tall",
+        prompt: `Hvilket tall kommer videre i rekken ${seq.join(", ")}?`,
+        answer,
+        options: createOptions(answer, [Number(answer) + 1, Number(answer) - step, Number(answer) + step]),
+        explanation: `Her øker rekken med ${step} hver gang. ${seq[3]} + ${step} = ${answer}.`
+      };
+    },
+    () => {
+      const base = 3 + (variant % 4);
+      const seq = [base, base * 2, base * 4, base * 8];
+      const answer = String(base * 16);
+      return {
+        id: `num-b-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 40 + level * 4,
+        title: "Mønster i rekken",
+        prompt: `Hvilket tall kommer videre i rekken ${seq.join(", ")}?`,
+        answer,
+        options: createOptions(answer, [Number(answer) - base, Number(answer) + base * 2, Number(answer) - base * 3]),
+        explanation: "Hvert tall dobles. Når du ser at alle hoppene er ganger 2, blir neste tall enkelt å finne."
+      };
+    },
+    () => {
+      const n = 2 + (variant % 5);
+      const seq = [n * n, (n + 1) * (n + 1), (n + 2) * (n + 2), (n + 3) * (n + 3)];
+      const answer = String((n + 4) * (n + 4));
+      return {
+        id: `num-c-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 42 + level * 4,
+        title: "Kvadrattall",
+        prompt: `Hvilket tall kommer videre i rekken ${seq.join(", ")}?`,
+        answer,
+        options: createOptions(answer, [Number(answer) - 1, Number(answer) + 4, (n + 5) * (n + 5)]),
+        explanation: "Dette er kvadrattall etter hverandre. Finn neste heltall og gang det med seg selv."
+      };
+    },
+    () => {
+      const total = 120 + (variant % 5) * 40;
+      const percent = [10, 20, 25, 30][variant % 4];
+      const answer = String((total * percent) / 100);
+      return {
+        id: `num-d-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 45 + level * 4,
+        title: "Prosentregning",
+        prompt: `Hva er ${percent} % av ${total}?`,
+        answer,
+        options: createOptions(answer, [answer * 1 + total / 10, answer * 1 - total / 20, total / 2]),
+        explanation: `Gjør prosent om til en andel av totalen. ${percent} % av ${total} blir ${answer}.`
+      };
+    },
+    () => {
+      const a = 10 + (variant % 8);
+      const b = a + 4 + (variant % 3);
+      const c = b + 5 + (variant % 2);
+      const d = c + 6 + (variant % 4);
+      const answer = String(d + 7 + (variant % 3));
+      return {
+        id: `num-e-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 48 + level * 4,
+        title: "Tallfølge med økende hopp",
+        prompt: `Hvilket tall kommer videre i rekken ${a}, ${b}, ${c}, ${d}, ...?`,
+        answer,
+        options: createOptions(answer, [Number(answer) - 1, Number(answer) + 2, Number(answer) - 3]),
+        explanation: "Se på forskjellene mellom tallene. Når hoppene øker jevnt, kan du fortsette samme mønster ett steg til."
+      };
+    },
+    () => {
+      const first = 8 + (variant % 6);
+      const second = first + 3 + (variant % 3);
+      const third = first + second;
+      const fourth = second + third;
+      const answer = String(third + fourth);
+      return {
+        id: `num-f-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 52 + level * 4,
+        title: "Finn mønsteret",
+        prompt: `Hvilket tall kommer videre i rekken ${first}, ${second}, ${third}, ${fourth}, ...?`,
+        answer,
+        options: createOptions(answer, [Number(answer) - 2, Number(answer) + 3, Number(answer) - 5]),
+        explanation: "Fra og med tredje ledd er hvert tall summen av de to foregående."
+      };
+    },
+    () => {
+      const ratioA = 2 + (variant % 4);
+      const ratioB = 3 + (variant % 3);
+      const multiplier = 4 + (variant % 4);
+      const total = (ratioA + ratioB) * multiplier;
+      const answer = String(ratioB * multiplier);
+      return {
+        id: `num-g-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 55 + level * 4,
+        title: "Forhold og andeler",
+        prompt: `Forholdet mellom røde og blå perler er ${ratioA}:${ratioB}. Hvis det er ${total} perler totalt, hvor mange er blå?`,
+        answer,
+        options: createOptions(answer, [ratioA * multiplier, total / 2, ratioB * multiplier + multiplier]),
+        explanation: `Legg sammen delene i forholdet og finn hvor stor én del er. Deretter ganger du med blå sin andel.`
+      };
+    },
+    () => {
+      const speed = 40 + (variant % 5) * 10;
+      const hours1 = 2 + (variant % 3);
+      const hours2 = hours1 + 1.5;
+      const distance = speed * hours1;
+      const answer = String(speed * hours2);
+      return {
+        id: `num-h-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 58 + level * 4,
+        title: "Fart og avstand",
+        prompt: `Et tog kjører ${distance} km på ${hours1} timer i samme fart. Hvor langt kjører det på ${String(hours2).replace(".", ",")} timer?`,
+        answer: `${answer} km`,
+        options: createOptions(`${answer} km`, [`${speed * (hours2 - 0.5)} km`, `${distance + speed} km`, `${speed * (hours2 + 0.5)} km`]),
+        explanation: `Finn først fart per time ved å dele strekning på tid. Deretter ganger du farten med ny tid.`
+      };
+    },
+    () => {
+      const price = 400 + (variant % 6) * 100;
+      const discount = [10, 15, 20, 25][variant % 4];
+      const answer = `${price - (price * discount) / 100} kr`;
+      return {
+        id: `num-i-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 60 + level * 4,
+        title: "Pris etter rabatt",
+        prompt: `En vare koster ${price} kr. Den settes ned med ${discount} %. Hva blir ny pris?`,
+        answer,
+        options: createOptions(answer, [`${price - (price * (discount - 5)) / 100} kr`, `${price - (price * (discount + 5)) / 100} kr`, `${price - price / 10} kr`]),
+        explanation: `Finn rabattbeløpet først, og trekk det deretter fra opprinnelig pris.`
+      };
+    },
+    () => {
+      const original = 14 + (variant % 9);
+      const subtract = 5 + (variant % 4);
+      const result = original * 2 - subtract;
+      return {
+        id: `num-j-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 64 + level * 4,
+        title: "Jobb baklengs",
+        prompt: `Et tall dobles og deretter trekkes ${subtract} fra. Resultatet er ${result}. Hva var tallet?`,
+        answer: String(original),
+        options: createOptions(String(original), [original - 2, original + 2, original - 1]),
+        explanation: `Jobb baklengs: legg først til ${subtract}, og del deretter på 2.`
+      };
+    }
+  ];
+
+  return templates[variant % templates.length]();
+}
+
+function logicVariant(level, variant) {
+  const people = [
+    ["Anna", "Bo", "Camilla"],
+    ["Ida", "Jon", "Kari"],
+    ["Mia", "Noah", "Ola"],
+    ["Per", "Sara", "Tina"]
+  ];
+  const trio = people[variant % people.length];
+  const templates = [
+    () => {
+      const pattern = ["sirkel", "trekant", "sirkel", "trekant"];
+      return {
+        id: `log-a-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 35 + level * 4,
+        title: "Mønstergjenkjenning",
+        prompt: `Hva kommer videre i mønsteret: ${pattern.join(", ")}, ...?`,
+        answer: "sirkel",
+        options: createOptions("sirkel", ["trekant", "kvadrat", "stjerne"]),
+        explanation: "Mønsteret veksler mellom to figurer, så du fortsetter samme veksling."
+      };
+    },
+    () => {
+      const letters = [["A", "C", "E", "G"], ["B", "D", "F", "H"], ["C", "E", "G", "I"]][variant % 3];
+      const answer = String.fromCharCode(letters[3].charCodeAt(0) + 2);
+      return {
+        id: `log-b-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 40 + level * 4,
+        title: "Bokstavmønster",
+        prompt: `Hva kommer videre i rekken ${letters.join(", ")}, ...?`,
+        answer,
+        options: createOptions(answer, [String.fromCharCode(answer.charCodeAt(0) - 1), String.fromCharCode(answer.charCodeAt(0) + 1), String.fromCharCode(answer.charCodeAt(0) + 2)]),
+        explanation: "Bokstavene hopper over én bokstav hver gang. Fortsett samme hopp."
+      };
+    },
+    () => {
+      return {
+        id: `log-c-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 45 + level * 4,
+        title: "Rekkefølge",
+        prompt: `${trio[0]} er eldre enn ${trio[1]}, og ${trio[1]} er eldre enn ${trio[2]}. Hvem er yngst?`,
+        answer: trio[2],
+        options: createOptions(trio[2], [trio[0], trio[1], "Kan ikke avgjøres"]),
+        explanation: "Når A er eldre enn B og B er eldre enn C, må C være yngst."
+      };
+    },
+    () => {
+      const names = [["Dina", "Emil", "Filip"], ["Hanna", "Iver", "Lukas"], ["Mona", "Nils", "Oskar"]][variant % 3];
+      return {
+        id: `log-d-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 48 + level * 4,
+        title: "Plassering",
+        prompt: `Tre personer står i kø. ${names[0]} står foran ${names[1]}, men bak ${names[2]}. Hvem må stå foran ${names[0]}?`,
+        answer: names[2],
+        options: createOptions(names[2], [names[1], "Ingen", "Begge"]),
+        explanation: `Hvis ${names[0]} står bak ${names[2]}, må ${names[2]} stå foran ${names[0]}.`
+      };
+    },
+    () => {
+      const role = [["analytikere", "nøyaktige", "Nora"], ["utviklere", "strukturerte", "Lina"], ["revisorer", "grundige", "Amir"]][variant % 3];
+      return {
+        id: `log-e-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 52 + level * 4,
+        title: "Logisk konklusjon",
+        prompt: `Alle ${role[0]} er ${role[1]}. ${role[2]} er ${role[0].slice(0, -1)}. Hva følger logisk?`,
+        answer: `${role[2]} er ${role[1]}`,
+        options: createOptions(`${role[2]} er ${role[1]}`, [`Alle ${role[1]} er ${role[0]}`, `${role[2]} er leder`, "Ingen sikker konklusjon"]),
+        explanation: "Dette er en direkte regel: hvis alle i gruppen har en egenskap, gjelder det også personen som tilhører gruppen."
+      };
+    },
+    () => {
+      const items = [["prosjekter", "plan", "Team X"], ["rapporter", "godkjenning", "Gruppe A"], ["søknader", "signatur", "Sak B"]][variant % 3];
+      return {
+        id: `log-f-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 56 + level * 4,
+        title: "Logisk konklusjon",
+        prompt: `Ingen ${items[0]} sendes uten ${items[1]}. ${items[2]} ble sendt. Hva følger logisk?`,
+        answer: `${items[2]} hadde ${items[1]}`,
+        options: createOptions(`${items[2]} hadde ${items[1]}`, [`${items[1]} var perfekt`, `Alle ${items[0]} blir sendt`, "Ingen sikker konklusjon"]),
+        explanation: "Hvis noe ikke kan sendes uten et krav, må kravet ha vært oppfylt når det faktisk ble sendt."
+      };
+    },
+    () => {
+      return {
+        id: `log-g-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 60 + level * 4,
+        title: "Betinget resonnement",
+        prompt: "Hvis det regner, blir bakken våt. Bakken er ikke våt. Hva kan du konkludere?",
+        answer: "Det regner ikke",
+        options: createOptions("Det regner ikke", ["Det regner", "Det har regnet tidligere", "Ingen sikker konklusjon"]),
+        explanation: "Når en regel alltid gjelder, kan du bruke den baklengs her: ingen våt bakke betyr at betingelsen ikke er oppfylt."
+      };
+    },
+    () => {
+      const queue = [["Oda", "Per", "Sara", "Lars"], ["Mia", "Noah", "Tina", "Elias"], ["Ida", "Jon", "Kari", "Petter"]][variant % 3];
+      return {
+        id: `log-h-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 64 + level * 4,
+        title: "Flere regler samtidig",
+        prompt: `${queue[1]} kommer etter ${queue[0]} i køen, men før ${queue[2]}. ${queue[3]} står foran ${queue[0]}. Hvem står bakerst av disse fire?`,
+        answer: queue[2],
+        options: createOptions(queue[2], [queue[1], queue[0], queue[3]]),
+        explanation: `Rekkefølgen blir ${queue[3]} foran ${queue[0]}, så ${queue[1]}, og til slutt ${queue[2]}.`
+      };
+    }
+  ];
+
+  return templates[variant % templates.length]();
+}
+
+function pickQuestion(category, targetDifficulty, usedIds, variant) {
+  if (category === "Numerisk") {
+    return numericVariant(targetDifficulty, variant);
+  }
+
+  if (category === "Logisk") {
+    return logicVariant(targetDifficulty, variant);
+  }
+
   const available = QUESTION_BANK[category].filter((question) => !usedIds.has(question.id));
   const ranked = available.sort((left, right) => {
     const leftDiff = Math.abs(left.difficulty - targetDifficulty);
@@ -197,7 +492,7 @@ function pickQuestion(category, targetDifficulty, usedIds) {
     if (leftDiff !== rightDiff) return leftDiff - rightDiff;
     return left.difficulty - right.difficulty;
   });
-  const choice = ranked[0] || QUESTION_BANK[category][0];
+  const choice = ranked[variant % ranked.length] || QUESTION_BANK[category][0];
   usedIds.add(choice.id);
   return cloneQuestion(choice, category);
 }
@@ -215,6 +510,7 @@ function getPracticeCategories(focusCategory) {
 }
 
 function generateQuestions(mode, focusCategory) {
+  const seed = Date.now() % 97;
   const usedIds = {
     Numerisk: new Set(),
     Verbal: new Set(),
@@ -226,7 +522,7 @@ function generateQuestions(mode, focusCategory) {
     return PRACTICE_LEVELS.map((level, index) => ({
       id: `practice-${index + 1}`,
       mode,
-      ...pickQuestion(categories[index], level, usedIds[categories[index]])
+      ...pickQuestion(categories[index], level, usedIds[categories[index]], index + seed)
     }));
   }
 
@@ -235,7 +531,7 @@ function generateQuestions(mode, focusCategory) {
     return {
       id: `full-${index + 1}`,
       mode,
-      ...pickQuestion(category, level, usedIds[category])
+      ...pickQuestion(category, level, usedIds[category], index + seed)
     };
   });
 }

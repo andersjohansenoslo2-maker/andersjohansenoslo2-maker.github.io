@@ -68,6 +68,12 @@ body {
   line-height: 1.55;
 }
 
+.build-label {
+  margin: -4px 6px 14px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
 .screen {
   display: none;
 }

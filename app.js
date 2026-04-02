@@ -1,4 +1,5 @@
 const STORAGE_KEY = "evnetest-trener-web-v1";
+const APP_VERSION = "20260402b";
 const FULL_TEST_LEVELS = [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 8, 8, 8, 8];
 const PRACTICE_LEVELS = [2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7];
 const CATEGORIES = ["Numerisk", "Verbal", "Logisk"];
@@ -603,7 +604,7 @@ elements.backHomeButton.addEventListener("click", renderHome);
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+    navigator.serviceWorker.register(`./service-worker.js?v=${APP_VERSION}`).catch(() => {});
   });
 }
 

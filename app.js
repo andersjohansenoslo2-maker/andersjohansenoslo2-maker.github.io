@@ -1,5 +1,5 @@
 const STORAGE_KEY = "evnetest-trener-web-v1";
-const APP_VERSION = "20260402d";
+const APP_VERSION = "20260402e";
 const FULL_TEST_LEVELS = [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 8, 8, 8, 8];
 const PRACTICE_LEVELS = [2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7];
 const CATEGORIES = ["Numerisk", "Verbal", "Logisk"];
@@ -599,9 +599,146 @@ function logicVariant(level, variant) {
   return templates[variant % templates.length]();
 }
 
+function verbalVariant(level, variant) {
+  const synonymSets = [
+    ["presis", "nøyaktig", ["rask", "kraftig", "høflig"]],
+    ["rolig", "avslappet", ["hastig", "urolig", "streng"]],
+    ["tydelig", "klar", ["sen", "smal", "hardt"]],
+    ["begrense", "avgrense", ["utvide", "forsterke", "forklare"]],
+    ["omfattende", "vidtrekkende", ["skjult", "kortvarig", "presist"]],
+    ["konsekvent", "sammenhengende", ["tilfeldig", "sjeldent", "urolig"]]
+  ];
+
+  const antonymSets = [
+    ["midlertidig", "permanent", ["kort", "uklar", "enkel"]],
+    ["generøs", "gjerrig", ["høflig", "stille", "smart"]],
+    ["optimistisk", "pessimistisk", ["vennlig", "effektiv", "rolig"]],
+    ["komplisert", "enkel", ["nøyaktig", "alvorlig", "vid"]],
+    ["innadvendt", "utadvendt", ["grundig", "sterk", "direkte"]]
+  ];
+
+  const analogySets = [
+    ["bok", "lese", "gaffel", "spise", ["skrive", "kutte", "vaske"]],
+    ["kompass", "retning", "termometer", "temperatur", ["avstand", "styrke", "fart"]],
+    ["arkitekt", "bygning", "komponist", "musikk", ["teater", "vei", "vann"]],
+    ["frø", "plante", "idé", "prosjekt", ["regel", "papir", "møte"]],
+    ["pilot", "cockpit", "kokk", "kjøkken", ["lager", "garasje", "resepsjon"]],
+    ["kalender", "dato", "klokke", "tid", ["retning", "fart", "temperatur"]]
+  ];
+
+  const oddOneOutSets = [
+    [["eple", "pære", "plomme", "gulrot"], "gulrot", "Tre ord er frukt, mens ett er en grønnsak."],
+    [["violin", "cello", "piano", "trompet"], "piano", "Tre er typisk melodiske instrumenter uten tangenter, mens piano er tangentinstrument."],
+    [["mandag", "onsdag", "fredag", "juni"], "juni", "Tre ord er ukedager, mens ett er en måned."],
+    [["løve", "tiger", "ulv", "ørret"], "ørret", "Tre ord er landdyr, mens ett er en fisk."],
+    [["sirkel", "trekant", "kvadrat", "blå"], "blå", "Tre ord er former, mens ett er en farge."]
+  ];
+
+  const sentenceSets = [
+    ["Hun var så ___ i arbeidet sitt at ingen detaljer ble oversett.", "grundig", ["tilfeldig", "stille", "kort"], "Setningen beskriver en person som jobber nøye og ser detaljer."],
+    ["Lederen ga en ___ forklaring, slik at alle forstod planen.", "tydelig", ["sen", "streng", "mørk"], "Når alle forstår planen, må forklaringen være lett å forstå."],
+    ["Forslaget var godt ___ og bygget på flere kilder.", "begrunnet", ["forsinket", "tilfeldig", "enkelt"], "Noe som bygger på flere kilder er vanligvis godt begrunnet."],
+    ["Hun møtte situasjonen på en ___ måte og gjorde ingen forhastede valg.", "rolig", ["uklar", "skarp", "sint"], "Når man ikke gjør forhastede valg, opptrer man rolig."]
+  ];
+
+  const categorySets = [
+    ["Hvilket ord beskriver best noe som er gjennomtenkt og velbegrunnet?", "reflektert", ["hastig", "uklar", "ensidig"], "Et reflektert svar er tenkt gjennom og godt begrunnet."],
+    ["Hvilket ord beskriver best noe som skjer uten planlegging?", "spontant", ["strukturert", "forsinket", "avgrenset"], "Når noe skjer uten planlegging, er det spontant."],
+    ["Hvilket ord beskriver best noe som er lett å stole på over tid?", "pålitelig", ["uklar", "midlertidig", "spontan"], "Noe pålitelig er stabilt og til å stole på."],
+    ["Hvilket ord beskriver best noe som er veldig nøye utført?", "omhyggelig", ["tilfeldig", "hastig", "løs"], "Omhyggelig arbeid er gjort med stor nøyaktighet."]
+  ];
+
+  const templates = [
+    () => {
+      const [stem, answer, distractors] = synonymSets[variant % synonymSets.length];
+      return {
+        id: `ver-a-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 35 + level * 4,
+        title: "Synonym",
+        prompt: `Hvilket ord betyr omtrent det samme som «${stem}»?`,
+        answer,
+        options: createOptions(answer, distractors),
+        explanation: `Se etter ordet som har nærmest samme betydning som «${stem}».`
+      };
+    },
+    () => {
+      const [stem, answer, distractors] = antonymSets[variant % antonymSets.length];
+      return {
+        id: `ver-b-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 38 + level * 4,
+        title: "Antonym",
+        prompt: `Hvilket ord betyr det motsatte av «${stem}»?`,
+        answer,
+        options: createOptions(answer, distractors),
+        explanation: `Finn ordet som betyr det motsatte av «${stem}».`
+      };
+    },
+    () => {
+      const [a, b, c, answer, distractors] = analogySets[variant % analogySets.length];
+      return {
+        id: `ver-c-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 42 + level * 4,
+        title: "Språklig analogi",
+        prompt: `Hvilket ord passer best: ${a} er til ${b} som ${c} er til ...`,
+        answer,
+        options: createOptions(answer, distractors),
+        explanation: `Se på forholdet mellom ${a} og ${b}, og finn samme type sammenheng for ${c}.`
+      };
+    },
+    () => {
+      const [words, answer, explanation] = oddOneOutSets[variant % oddOneOutSets.length];
+      return {
+        id: `ver-d-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 40 + level * 4,
+        title: "Finn avvikeren",
+        prompt: `Hvilket ord skiller seg ut? ${words.join(", ")}`,
+        answer,
+        options: [...words],
+        explanation
+      };
+    },
+    () => {
+      const [prompt, answer, distractors, explanation] = sentenceSets[variant % sentenceSets.length];
+      return {
+        id: `ver-e-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 44 + level * 4,
+        title: "Setningsforståelse",
+        prompt: `Velg ordet som passer best i setningen: «${prompt}»`,
+        answer,
+        options: createOptions(answer, distractors),
+        explanation
+      };
+    },
+    () => {
+      const [prompt, answer, distractors, explanation] = categorySets[variant % categorySets.length];
+      return {
+        id: `ver-f-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 46 + level * 4,
+        title: "Begrepsforståelse",
+        prompt,
+        answer,
+        options: createOptions(answer, distractors),
+        explanation
+      };
+    }
+  ];
+
+  return templates[variant % templates.length]();
+}
+
 function pickQuestion(category, targetDifficulty, usedIds, variant) {
   if (category === "Numerisk") {
     return numericVariant(targetDifficulty, variant);
+  }
+
+  if (category === "Verbal") {
+    return verbalVariant(targetDifficulty, variant);
   }
 
   if (category === "Logisk") {

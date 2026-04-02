@@ -1,5 +1,5 @@
 const STORAGE_KEY = "evnetest-trener-web-v1";
-const APP_VERSION = "20260402c";
+const APP_VERSION = "20260402d";
 const FULL_TEST_LEVELS = [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 8, 8, 8, 8];
 const PRACTICE_LEVELS = [2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7];
 const CATEGORIES = ["Numerisk", "Verbal", "Logisk"];
@@ -193,6 +193,10 @@ function createOptions(answer, distractors) {
   return shuffle([answer, ...distractors.map(String)]);
 }
 
+function randomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 function numericVariant(level, variant) {
   const templates = [
     () => {
@@ -353,6 +357,68 @@ function numericVariant(level, variant) {
         options: createOptions(String(original), [original - 2, original + 2, original - 1]),
         explanation: `Jobb baklengs: legg først til ${subtract}, og del deretter på 2.`
       };
+    },
+    () => {
+      const total = 150 + (variant % 6) * 30;
+      const part = 3 + (variant % 5);
+      const answer = String(total / part);
+      return {
+        id: `num-k-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 52 + level * 4,
+        title: "Del av helhet",
+        prompt: `Et beløp på ${total} kr skal deles likt på ${part} personer. Hvor mye får hver?`,
+        answer: `${answer} kr`,
+        options: createOptions(`${answer} kr`, [`${Number(answer) + 5} kr`, `${Number(answer) - 5} kr`, `${Number(answer) + 10} kr`]),
+        explanation: "Når noe skal deles likt, deler du totalbeløpet på antall personer."
+      };
+    },
+    () => {
+      const start = 20 + (variant % 8) * 5;
+      const increase = 10 + (variant % 4) * 5;
+      const answer = String(start + increase);
+      return {
+        id: `num-l-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 54 + level * 4,
+        title: "Økning i prosent",
+        prompt: `Et tall på ${start} øker med ${Math.round((increase / start) * 100)} %. Hva blir det nye tallet?`,
+        answer,
+        options: createOptions(answer, [start + 5, start + increase + 5, start + increase - 5]),
+        explanation: "Finn økningen i tall og legg den til startverdien. Her gir prosentøkningen et konkret tillegg."
+      };
+    },
+    () => {
+      const a = 1 + (variant % 4);
+      const b = 2 + (variant % 4);
+      const c = 3 + (variant % 4);
+      const d = 4 + (variant % 4);
+      const answer = String((a + b) * c - d);
+      return {
+        id: `num-m-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 58 + level * 4,
+        title: "Regnerekkefølge",
+        prompt: `Hva er riktig svar på (${a} + ${b}) × ${c} - ${d}?`,
+        answer,
+        options: createOptions(answer, [Number(answer) + 2, Number(answer) - 2, (a + b + c) * d]),
+        explanation: "Start med parentesen, gang deretter, og trekk til slutt fra siste tall."
+      };
+    },
+    () => {
+      const base = randomInt(3, 7) + (variant % 2);
+      const seq = [base, base + 2, base + 6, base + 12];
+      const answer = String(base + 20);
+      return {
+        id: `num-n-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 56 + level * 4,
+        title: "Mønster med økende tillegg",
+        prompt: `Hvilket tall kommer videre i rekken ${seq.join(", ")}?`,
+        answer,
+        options: createOptions(answer, [Number(answer) - 2, Number(answer) + 2, Number(answer) + 4]),
+        explanation: "Forskjellene er 2, 4, 6. Neste forskjell blir 8, så du legger 8 til siste tall."
+      };
     }
   ];
 
@@ -470,6 +536,63 @@ function logicVariant(level, variant) {
         options: createOptions(queue[2], [queue[1], queue[0], queue[3]]),
         explanation: `Rekkefølgen blir ${queue[3]} foran ${queue[0]}, så ${queue[1]}, og til slutt ${queue[2]}.`
       };
+    },
+    () => {
+      const sets = [["roser", "blomster"], ["laks", "fisk"], ["eiketrær", "trær"]];
+      const [subset, superset] = sets[variant % sets.length];
+      return {
+        id: `log-i-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 58 + level * 4,
+        title: "Kategorilogikk",
+        prompt: `Alle ${subset} er ${superset}. Hvilken påstand må være sann?`,
+        answer: `${subset[0].toUpperCase()}${subset.slice(1)} er ${superset}`,
+        options: createOptions(`${subset[0].toUpperCase()}${subset.slice(1)} er ${superset}`, [`Alle ${superset} er ${subset}`, `Noen ${subset} er ikke ${superset}`, `Ingen ${superset} finnes`]),
+        explanation: "Når alle i én gruppe tilhører en større gruppe, er nettopp den koblingen alltid sann."
+      };
+    },
+    () => {
+      const tasks = [["møte", "rapport", "presentasjon"], ["analyse", "utkast", "levering"], ["plan", "test", "lansering"]];
+      const [first, second, third] = tasks[variant % tasks.length];
+      return {
+        id: `log-j-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 60 + level * 4,
+        title: "Planlegging",
+        prompt: `${first} må skje før ${second}, og ${second} må skje før ${third}. Hva må skje først?`,
+        answer: first,
+        options: createOptions(first, [second, third, "Det kan ikke avgjøres"]),
+        explanation: "Når A må før B og B må før C, er A alltid først i rekkefølgen."
+      };
+    },
+    () => {
+      const names = [["Kari", "Lars", "Mona"], ["Ida", "Jon", "Sara"], ["Eli", "Noah", "Per"]];
+      const [a, b, c] = names[variant % names.length];
+      return {
+        id: `log-k-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 55 + level * 4,
+        title: "Utelukkelse",
+        prompt: `${a}, ${b} og ${c} skal sitte ved siden av hverandre. ${c} kan ikke sitte i midten. Hvilken plassering er mulig?`,
+        answer: `${a}, ${b}, ${c}`,
+        options: createOptions(`${a}, ${b}, ${c}`, [`${b}, ${c}, ${a}`, `${c}, ${b}, ${a}`, `${a}, ${c}, ${b}`]),
+        explanation: `Siden ${c} ikke kan sitte i midten, må du velge en rekkefølge der ${c} står ytterst.`
+      };
+    },
+    () => {
+      const letters = [["A", "B", "D", "G"], ["C", "D", "F", "I"], ["E", "F", "H", "K"]];
+      const seq = letters[variant % letters.length];
+      const answer = String.fromCharCode(seq[3].charCodeAt(0) + 4);
+      return {
+        id: `log-l-${level}-${variant}`,
+        difficulty: level,
+        recommendedTime: 52 + level * 4,
+        title: "Bokstavmønster",
+        prompt: `Hva kommer videre i rekken ${seq.join(", ")}, ...?`,
+        answer,
+        options: createOptions(answer, [String.fromCharCode(answer.charCodeAt(0) - 1), String.fromCharCode(answer.charCodeAt(0) + 1), String.fromCharCode(answer.charCodeAt(0) + 2)]),
+        explanation: "Hoppene mellom bokstavene øker her gradvis. Se på forskjellene før du velger neste bokstav."
+      };
     }
   ];
 
@@ -510,7 +633,7 @@ function getPracticeCategories(focusCategory) {
 }
 
 function generateQuestions(mode, focusCategory) {
-  const seed = Date.now() % 97;
+  const seed = randomInt(1000, 999999);
   const usedIds = {
     Numerisk: new Set(),
     Verbal: new Set(),

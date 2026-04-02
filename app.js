@@ -10,6 +10,7 @@ const state = {
   questions: [],
   currentIndex: 0,
   selectedOption: null,
+  reviewMode: false,
   answers: [],
   sessionType: "full",
   lastResult: null
@@ -40,6 +41,10 @@ const elements = {
   questionText: document.getElementById("question-text"),
   questionPrompt: document.getElementById("question-prompt"),
   optionsContainer: document.getElementById("options-container"),
+  answerReview: document.getElementById("answer-review"),
+  answerStatus: document.getElementById("answer-status"),
+  answerCorrect: document.getElementById("answer-correct"),
+  answerExplanation: document.getElementById("answer-explanation"),
   nextButton: document.getElementById("next-btn"),
   scoreHeading: document.getElementById("score-heading"),
   scoreSummary: document.getElementById("score-summary"),
@@ -74,7 +79,7 @@ const QUESTION_BANK = {
     { id: "n9", difficulty: 5, recommendedTime: 55, title: "Mønster i rekken", prompt: "Hvilket tall kommer videre i rekken 7, 11, 18, 29, 47, ...?", options: ["76", "74", "78", "82"], answer: "76" },
     { id: "n10", difficulty: 5, recommendedTime: 55, title: "Tallfølge", prompt: "Hvilket tall kommer videre i rekken 2, 6, 12, 20, 30, ...?", options: ["42", "40", "44", "46"], answer: "42" },
     { id: "n11", difficulty: 6, recommendedTime: 60, title: "Pris etter rabatt", prompt: "En jakke koster 800 kr. Den settes ned med 15 %. Hva blir ny pris?", options: ["680 kr", "720 kr", "660 kr", "700 kr"], answer: "680 kr" },
-    { id: "n12", difficulty: 6, recommendedTime: 60, title: "Mønster i rekken", prompt: "Hvilket tall kommer videre i rekken 5, 9, 17, 33, ...?", options: ["65", "57", "61", "67"], answer: "65" },
+    { id: "n12", difficulty: 6, recommendedTime: 60, title: "Mønster i rekken", prompt: "Hvilket tall kommer videre i rekken 6, 12, 24, 48, ...?", options: ["96", "72", "84", "108"], answer: "96" },
     { id: "n13", difficulty: 7, recommendedTime: 65, title: "Lønn og prosent", prompt: "En årslønn på 500 000 kr øker med 8 %. Hva blir ny årslønn?", options: ["540 000 kr", "508 000 kr", "545 000 kr", "560 000 kr"], answer: "540 000 kr" },
     { id: "n14", difficulty: 7, recommendedTime: 65, title: "Brøk og tid", prompt: "En oppgave tar 3/5 av en time. Hvor mange minutter er det?", options: ["36", "30", "40", "45"], answer: "36" },
     { id: "n15", difficulty: 8, recommendedTime: 70, title: "Flere trinn", prompt: "Et tall dobles og deretter trekkes 7 fra. Resultatet er 29. Hva var tallet?", options: ["18", "11", "16", "14"], answer: "18" },
@@ -118,6 +123,57 @@ const QUESTION_BANK = {
   ]
 };
 
+const EXPLANATION_BY_ID = {
+  n1: "Her øker rekken med 3 hver gang. 21 + 3 = 24.",
+  n2: "Tallene er kvadrattall: 2², 3², 4², 5². Neste blir 6² = 36.",
+  n3: "Hvert tall dobles. 24 ganger 2 gir 48.",
+  n4: "25 prosent er en fjerdedel. 240 delt på 4 er 60.",
+  n5: "Du trekker fra 1, så 2, så 3, så 4. Neste steg er minus 5, så svaret blir -1.",
+  n6: "Legg sammen tallene: 14 + 18 + 23 + 25 = 80. Del på 4, så får du 20.",
+  n7: "Forholdet 3:2 betyr 5 like deler totalt. 25 delt på 5 er 5 per del, og blå er 2 deler: 10.",
+  n8: "Toget kjører 180 delt på 3 = 60 km/t. På 4,5 timer blir det 60 ganger 4,5 = 270 km.",
+  n9: "Hvert nytt tall er summen av de to foregående. 29 + 47 = 76.",
+  n10: "Forskjellene er 4, 6, 8 og 10. Neste forskjell er 12, så 30 + 12 = 42.",
+  n11: "15 prosent av 800 er 120. 800 - 120 = 680.",
+  n12: "Hvert tall dobles. 6 blir 12, 12 blir 24, 24 blir 48, så neste tall er 96.",
+  n13: "8 prosent av 500 000 er 40 000. Ny lønn blir 540 000.",
+  n14: "Tre femtedeler av 60 minutter er 36 minutter.",
+  n15: "Tenk baklengs: 29 + 7 = 36, og 36 delt på 2 er 18.",
+  n16: "Hvert tall deles på 3. 81, 27, 9, 3, 1.",
+  v1: "Se etter funksjon: en bok brukes til å lese, og en gaffel brukes til å spise.",
+  v2: "Tre ord er frukt. Gulrot er grønnsak og skiller seg ut.",
+  v3: "Presis og nøyaktig betyr omtrent det samme i denne sammenhengen.",
+  v4: "Kompass måler retning, termometer måler temperatur.",
+  v5: "Midlertidig betyr ikke varig. Det motsatte er permanent.",
+  v6: "En arkitekt lager bygninger, en komponist lager musikk.",
+  v7: "Setningen handler om å ikke overse detaljer. Da passer grundig best.",
+  v8: "Violin, cello og trompet er instrumenter man vanligvis holder og spiller enkelttoner på. Piano skiller seg ut som tangentinstrument.",
+  v9: "Omfattende betyr at noe dekker mye eller har stor bredde, altså vidtrekkende.",
+  v10: "Et frø utvikler seg til en plante. En idé kan utvikle seg til et prosjekt.",
+  v11: "Strategi henger sammen med planlegging. Improvisasjon henger sammen med spontanitet.",
+  v12: "Å begrense er å sette grenser for noe, altså å avgrense.",
+  v13: "Kalender viser dato på samme måte som klokke viser tid.",
+  v14: "Noe som er både gjennomtenkt og velbegrunnet beskrives best som reflektert.",
+  v15: "Piloten jobber i cockpit. Kokken jobber på kjøkkenet.",
+  v16: "Konsekvent handler om at noe henger sammen og gjøres på samme måte over tid.",
+  l1: "Mønsteret veksler mellom sirkel og trekant, så neste figur blir sirkel.",
+  l2: "Fargene går i repeterende rekkefølge: rød, blå, grønn.",
+  l3: "Bokstavene hopper over én bokstav hver gang: A, C, E, G, I.",
+  l4: "Tallene dobles for hvert steg: 2, 4, 8, 16, 32.",
+  l5: "Hvis Anna er eldre enn Bo og Bo er eldre enn Camilla, må Camilla være yngst.",
+  l6: "Dina står bak Filip og foran Emil. Da må Filip stå foran Dina.",
+  l7: "Hvis alle analytikere er nøyaktige, gjelder det også Nora når hun er analytiker.",
+  l8: "Hvis ingen prosjekter leveres uten plan, må et levert prosjekt ha hatt en plan.",
+  l9: "Dette er en direkte regel: alle tester er tidsbestemte. Oppgaven er en test, altså er den tidsbestemt.",
+  l10: "Mona kan ikke sitte i midten. Av alternativene er bare Kari, Lars, Mona mulig.",
+  l11: "Reglene sier møte før rapport og rapport før presentasjon. Derfor må møtet skje først.",
+  l12: "Alle som trener jevnlig forbedrer seg. Amir trener jevnlig, altså forbedrer han seg.",
+  l13: "Hvis regn alltid fører til våt bakke, og bakken ikke er våt, kan det ikke regne nå.",
+  l14: "Den eneste påstanden som alltid følger av premisset, er at roser er blomster.",
+  l15: "Lars står foran Oda, Oda står foran Per, og Per står foran Sara. Da står Sara bakerst.",
+  l16: "Hvis ingen rapporter sendes uten kvalitetssjekk, må en sendt rapport ha blitt kvalitetssjekket."
+};
+
 function cloneQuestion(question, category) {
   return {
     id: question.id,
@@ -127,6 +183,7 @@ function cloneQuestion(question, category) {
     title: question.title,
     prompt: question.prompt,
     answer: question.answer,
+    explanation: EXPLANATION_BY_ID[question.id] || "Se etter hovedregelen i oppgaven og test den mot hvert svaralternativ.",
     options: shuffle([...question.options])
   };
 }
@@ -401,8 +458,14 @@ function renderQuestion() {
   elements.questionText.textContent = question.title;
   elements.questionPrompt.textContent = question.prompt;
   elements.optionsContainer.innerHTML = "";
+  elements.answerReview.className = "answer-review hidden";
+  elements.answerStatus.textContent = "";
+  elements.answerCorrect.textContent = "";
+  elements.answerExplanation.textContent = "";
   elements.nextButton.disabled = true;
+  elements.nextButton.textContent = "Sjekk svar";
   state.selectedOption = null;
+  state.reviewMode = false;
 
   question.options.forEach((option) => {
     const button = document.createElement("button");
@@ -410,12 +473,32 @@ function renderQuestion() {
     button.className = "option-btn";
     button.textContent = option;
     button.addEventListener("click", () => {
+      if (state.reviewMode) return;
       state.selectedOption = option;
       elements.nextButton.disabled = false;
       [...elements.optionsContainer.children].forEach((child) => child.classList.remove("selected"));
       button.classList.add("selected");
     });
     elements.optionsContainer.appendChild(button);
+  });
+}
+
+function showAnswerReview() {
+  const question = state.questions[state.currentIndex];
+  const isCorrect = state.selectedOption === question.answer;
+
+  state.reviewMode = true;
+  elements.answerReview.className = `answer-review${isCorrect ? " correct" : ""}`;
+  elements.answerStatus.textContent = isCorrect ? "Riktig svar." : "Ikke helt riktig.";
+  elements.answerCorrect.textContent = `Riktig svar var ${question.answer}.`;
+  elements.answerExplanation.textContent = question.explanation;
+  elements.nextButton.textContent = state.currentIndex === state.questions.length - 1 ? "Se resultat" : "Neste spørsmål";
+
+  [...elements.optionsContainer.children].forEach((child) => {
+    child.disabled = true;
+    if (child.textContent === question.answer) {
+      child.classList.add("selected");
+    }
   });
 }
 
@@ -428,6 +511,7 @@ function startSession(type, focusCategory) {
   state.currentIndex = 0;
   state.answers = [];
   state.lastResult = null;
+  state.reviewMode = false;
   switchScreen("quiz");
   renderQuestion();
 }
@@ -463,6 +547,12 @@ function showResults() {
 
 function handleNext() {
   const question = state.questions[state.currentIndex];
+
+  if (!state.reviewMode) {
+    showAnswerReview();
+    return;
+  }
+
   state.answers.push({
     id: question.id,
     category: question.category,

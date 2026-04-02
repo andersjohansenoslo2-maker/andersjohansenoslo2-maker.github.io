@@ -351,6 +351,35 @@ body {
   background: rgba(31, 111, 95, 0.08);
 }
 
+.answer-review {
+  margin-top: 18px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: #fff7ea;
+  border: 1px solid rgba(208, 122, 49, 0.2);
+}
+
+.answer-review.correct {
+  background: #e8f3ef;
+  border-color: rgba(31, 111, 95, 0.24);
+}
+
+.answer-status {
+  margin: 0 0 6px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.answer-correct,
+.answer-explanation {
+  margin: 0;
+  color: var(--muted);
+}
+
+.answer-explanation {
+  margin-top: 8px;
+}
+
 @media (max-width: 620px) {
   .app-shell {
     padding: 16px 12px 28px;

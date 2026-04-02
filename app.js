@@ -1,5 +1,5 @@
 const STORAGE_KEY = "evnetest-trener-web-v1";
-const APP_VERSION = "20260402e";
+const APP_VERSION = "20260402f";
 const FULL_TEST_LEVELS = [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 8, 8, 8, 8];
 const PRACTICE_LEVELS = [2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7];
 const CATEGORIES = ["Numerisk", "Verbal", "Logisk"];
@@ -38,6 +38,7 @@ const elements = {
   progressBar: document.getElementById("progress-bar"),
   difficultyPill: document.getElementById("difficulty-pill"),
   categoryChip: document.getElementById("category-chip"),
+  subtypeChip: document.getElementById("subtype-chip"),
   timeChip: document.getElementById("time-chip"),
   questionText: document.getElementById("question-text"),
   questionPrompt: document.getElementById("question-prompt"),
@@ -179,6 +180,7 @@ function cloneQuestion(question, category) {
   return {
     id: question.id,
     category,
+    subtype: question.subtype || "Generell",
     difficulty: question.difficulty,
     recommendedTime: question.recommendedTime,
     title: question.title,
@@ -189,6 +191,36 @@ function cloneQuestion(question, category) {
   };
 }
 
+function subtypeCategory(subtype) {
+  const map = {
+    Tallmønster: "Numerisk",
+    Kvadrattall: "Numerisk",
+    Prosent: "Numerisk",
+    Forhold: "Numerisk",
+    Fart: "Numerisk",
+    Rabatt: "Numerisk",
+    Deling: "Numerisk",
+    Regnerekkefølge: "Numerisk",
+    Baklengsregning: "Numerisk",
+    Ordforråd: "Verbal",
+    Antonym: "Verbal",
+    Analogi: "Verbal",
+    Avviker: "Verbal",
+    Setningsforståelse: "Verbal",
+    Begrepsforståelse: "Verbal",
+    Mønstergjenkjenning: "Logisk",
+    Bokstavmønster: "Logisk",
+    Rekkefølge: "Logisk",
+    Plassering: "Logisk",
+    Konklusjon: "Logisk",
+    Betingelser: "Logisk",
+    Planlegging: "Logisk",
+    Kategorilogikk: "Logisk",
+    Utelukkelse: "Logisk"
+  };
+  return map[subtype] || "Numerisk";
+}
+
 function createOptions(answer, distractors) {
   return shuffle([answer, ...distractors.map(String)]);
 }
@@ -197,7 +229,7 @@ function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function numericVariant(level, variant) {
+function numericVariant(level, variant, preferredSubtype) {
   const templates = [
     () => {
       const start = 8 + ((variant * 3) % 9);
@@ -208,6 +240,7 @@ function numericVariant(level, variant) {
         id: `num-a-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 35 + level * 4,
+        subtype: "Tallmønster",
         title: "Finn neste tall",
         prompt: `Hvilket tall kommer videre i rekken ${seq.join(", ")}?`,
         answer,
@@ -223,6 +256,7 @@ function numericVariant(level, variant) {
         id: `num-b-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 40 + level * 4,
+        subtype: "Tallmønster",
         title: "Mønster i rekken",
         prompt: `Hvilket tall kommer videre i rekken ${seq.join(", ")}?`,
         answer,
@@ -238,6 +272,7 @@ function numericVariant(level, variant) {
         id: `num-c-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 42 + level * 4,
+        subtype: "Kvadrattall",
         title: "Kvadrattall",
         prompt: `Hvilket tall kommer videre i rekken ${seq.join(", ")}?`,
         answer,
@@ -253,6 +288,7 @@ function numericVariant(level, variant) {
         id: `num-d-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 45 + level * 4,
+        subtype: "Prosent",
         title: "Prosentregning",
         prompt: `Hva er ${percent} % av ${total}?`,
         answer,
@@ -270,6 +306,7 @@ function numericVariant(level, variant) {
         id: `num-e-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 48 + level * 4,
+        subtype: "Tallmønster",
         title: "Tallfølge med økende hopp",
         prompt: `Hvilket tall kommer videre i rekken ${a}, ${b}, ${c}, ${d}, ...?`,
         answer,
@@ -287,6 +324,7 @@ function numericVariant(level, variant) {
         id: `num-f-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 52 + level * 4,
+        subtype: "Tallmønster",
         title: "Finn mønsteret",
         prompt: `Hvilket tall kommer videre i rekken ${first}, ${second}, ${third}, ${fourth}, ...?`,
         answer,
@@ -304,6 +342,7 @@ function numericVariant(level, variant) {
         id: `num-g-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 55 + level * 4,
+        subtype: "Forhold",
         title: "Forhold og andeler",
         prompt: `Forholdet mellom røde og blå perler er ${ratioA}:${ratioB}. Hvis det er ${total} perler totalt, hvor mange er blå?`,
         answer,
@@ -321,6 +360,7 @@ function numericVariant(level, variant) {
         id: `num-h-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 58 + level * 4,
+        subtype: "Fart",
         title: "Fart og avstand",
         prompt: `Et tog kjører ${distance} km på ${hours1} timer i samme fart. Hvor langt kjører det på ${String(hours2).replace(".", ",")} timer?`,
         answer: `${answer} km`,
@@ -336,6 +376,7 @@ function numericVariant(level, variant) {
         id: `num-i-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 60 + level * 4,
+        subtype: "Rabatt",
         title: "Pris etter rabatt",
         prompt: `En vare koster ${price} kr. Den settes ned med ${discount} %. Hva blir ny pris?`,
         answer,
@@ -351,6 +392,7 @@ function numericVariant(level, variant) {
         id: `num-j-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 64 + level * 4,
+        subtype: "Baklengsregning",
         title: "Jobb baklengs",
         prompt: `Et tall dobles og deretter trekkes ${subtract} fra. Resultatet er ${result}. Hva var tallet?`,
         answer: String(original),
@@ -366,6 +408,7 @@ function numericVariant(level, variant) {
         id: `num-k-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 52 + level * 4,
+        subtype: "Deling",
         title: "Del av helhet",
         prompt: `Et beløp på ${total} kr skal deles likt på ${part} personer. Hvor mye får hver?`,
         answer: `${answer} kr`,
@@ -381,6 +424,7 @@ function numericVariant(level, variant) {
         id: `num-l-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 54 + level * 4,
+        subtype: "Prosent",
         title: "Økning i prosent",
         prompt: `Et tall på ${start} øker med ${Math.round((increase / start) * 100)} %. Hva blir det nye tallet?`,
         answer,
@@ -398,6 +442,7 @@ function numericVariant(level, variant) {
         id: `num-m-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 58 + level * 4,
+        subtype: "Regnerekkefølge",
         title: "Regnerekkefølge",
         prompt: `Hva er riktig svar på (${a} + ${b}) × ${c} - ${d}?`,
         answer,
@@ -413,6 +458,7 @@ function numericVariant(level, variant) {
         id: `num-n-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 56 + level * 4,
+        subtype: "Tallmønster",
         title: "Mønster med økende tillegg",
         prompt: `Hvilket tall kommer videre i rekken ${seq.join(", ")}?`,
         answer,
@@ -422,10 +468,12 @@ function numericVariant(level, variant) {
     }
   ];
 
-  return templates[variant % templates.length]();
+  const generated = templates.map((template) => template());
+  const preferred = generated.find((item) => item.subtype === preferredSubtype);
+  return preferred || generated[variant % generated.length];
 }
 
-function logicVariant(level, variant) {
+function logicVariant(level, variant, preferredSubtype) {
   const people = [
     ["Anna", "Bo", "Camilla"],
     ["Ida", "Jon", "Kari"],
@@ -440,6 +488,7 @@ function logicVariant(level, variant) {
         id: `log-a-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 35 + level * 4,
+        subtype: "Mønstergjenkjenning",
         title: "Mønstergjenkjenning",
         prompt: `Hva kommer videre i mønsteret: ${pattern.join(", ")}, ...?`,
         answer: "sirkel",
@@ -454,6 +503,7 @@ function logicVariant(level, variant) {
         id: `log-b-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 40 + level * 4,
+        subtype: "Bokstavmønster",
         title: "Bokstavmønster",
         prompt: `Hva kommer videre i rekken ${letters.join(", ")}, ...?`,
         answer,
@@ -466,6 +516,7 @@ function logicVariant(level, variant) {
         id: `log-c-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 45 + level * 4,
+        subtype: "Rekkefølge",
         title: "Rekkefølge",
         prompt: `${trio[0]} er eldre enn ${trio[1]}, og ${trio[1]} er eldre enn ${trio[2]}. Hvem er yngst?`,
         answer: trio[2],
@@ -479,6 +530,7 @@ function logicVariant(level, variant) {
         id: `log-d-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 48 + level * 4,
+        subtype: "Plassering",
         title: "Plassering",
         prompt: `Tre personer står i kø. ${names[0]} står foran ${names[1]}, men bak ${names[2]}. Hvem må stå foran ${names[0]}?`,
         answer: names[2],
@@ -492,6 +544,7 @@ function logicVariant(level, variant) {
         id: `log-e-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 52 + level * 4,
+        subtype: "Konklusjon",
         title: "Logisk konklusjon",
         prompt: `Alle ${role[0]} er ${role[1]}. ${role[2]} er ${role[0].slice(0, -1)}. Hva følger logisk?`,
         answer: `${role[2]} er ${role[1]}`,
@@ -505,6 +558,7 @@ function logicVariant(level, variant) {
         id: `log-f-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 56 + level * 4,
+        subtype: "Konklusjon",
         title: "Logisk konklusjon",
         prompt: `Ingen ${items[0]} sendes uten ${items[1]}. ${items[2]} ble sendt. Hva følger logisk?`,
         answer: `${items[2]} hadde ${items[1]}`,
@@ -517,6 +571,7 @@ function logicVariant(level, variant) {
         id: `log-g-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 60 + level * 4,
+        subtype: "Betingelser",
         title: "Betinget resonnement",
         prompt: "Hvis det regner, blir bakken våt. Bakken er ikke våt. Hva kan du konkludere?",
         answer: "Det regner ikke",
@@ -530,6 +585,7 @@ function logicVariant(level, variant) {
         id: `log-h-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 64 + level * 4,
+        subtype: "Rekkefølge",
         title: "Flere regler samtidig",
         prompt: `${queue[1]} kommer etter ${queue[0]} i køen, men før ${queue[2]}. ${queue[3]} står foran ${queue[0]}. Hvem står bakerst av disse fire?`,
         answer: queue[2],
@@ -544,6 +600,7 @@ function logicVariant(level, variant) {
         id: `log-i-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 58 + level * 4,
+        subtype: "Kategorilogikk",
         title: "Kategorilogikk",
         prompt: `Alle ${subset} er ${superset}. Hvilken påstand må være sann?`,
         answer: `${subset[0].toUpperCase()}${subset.slice(1)} er ${superset}`,
@@ -558,6 +615,7 @@ function logicVariant(level, variant) {
         id: `log-j-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 60 + level * 4,
+        subtype: "Planlegging",
         title: "Planlegging",
         prompt: `${first} må skje før ${second}, og ${second} må skje før ${third}. Hva må skje først?`,
         answer: first,
@@ -572,6 +630,7 @@ function logicVariant(level, variant) {
         id: `log-k-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 55 + level * 4,
+        subtype: "Utelukkelse",
         title: "Utelukkelse",
         prompt: `${a}, ${b} og ${c} skal sitte ved siden av hverandre. ${c} kan ikke sitte i midten. Hvilken plassering er mulig?`,
         answer: `${a}, ${b}, ${c}`,
@@ -587,6 +646,7 @@ function logicVariant(level, variant) {
         id: `log-l-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 52 + level * 4,
+        subtype: "Bokstavmønster",
         title: "Bokstavmønster",
         prompt: `Hva kommer videre i rekken ${seq.join(", ")}, ...?`,
         answer,
@@ -596,10 +656,12 @@ function logicVariant(level, variant) {
     }
   ];
 
-  return templates[variant % templates.length]();
+  const generated = templates.map((template) => template());
+  const preferred = generated.find((item) => item.subtype === preferredSubtype);
+  return preferred || generated[variant % generated.length];
 }
 
-function verbalVariant(level, variant) {
+function verbalVariant(level, variant, preferredSubtype) {
   const synonymSets = [
     ["presis", "nøyaktig", ["rask", "kraftig", "høflig"]],
     ["rolig", "avslappet", ["hastig", "urolig", "streng"]],
@@ -655,6 +717,7 @@ function verbalVariant(level, variant) {
         id: `ver-a-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 35 + level * 4,
+        subtype: "Ordforråd",
         title: "Synonym",
         prompt: `Hvilket ord betyr omtrent det samme som «${stem}»?`,
         answer,
@@ -668,6 +731,7 @@ function verbalVariant(level, variant) {
         id: `ver-b-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 38 + level * 4,
+        subtype: "Antonym",
         title: "Antonym",
         prompt: `Hvilket ord betyr det motsatte av «${stem}»?`,
         answer,
@@ -681,6 +745,7 @@ function verbalVariant(level, variant) {
         id: `ver-c-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 42 + level * 4,
+        subtype: "Analogi",
         title: "Språklig analogi",
         prompt: `Hvilket ord passer best: ${a} er til ${b} som ${c} er til ...`,
         answer,
@@ -694,6 +759,7 @@ function verbalVariant(level, variant) {
         id: `ver-d-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 40 + level * 4,
+        subtype: "Avviker",
         title: "Finn avvikeren",
         prompt: `Hvilket ord skiller seg ut? ${words.join(", ")}`,
         answer,
@@ -707,6 +773,7 @@ function verbalVariant(level, variant) {
         id: `ver-e-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 44 + level * 4,
+        subtype: "Setningsforståelse",
         title: "Setningsforståelse",
         prompt: `Velg ordet som passer best i setningen: «${prompt}»`,
         answer,
@@ -720,6 +787,7 @@ function verbalVariant(level, variant) {
         id: `ver-f-${level}-${variant}`,
         difficulty: level,
         recommendedTime: 46 + level * 4,
+        subtype: "Begrepsforståelse",
         title: "Begrepsforståelse",
         prompt,
         answer,
@@ -729,20 +797,22 @@ function verbalVariant(level, variant) {
     }
   ];
 
-  return templates[variant % templates.length]();
+  const generated = templates.map((template) => template());
+  const preferred = generated.find((item) => item.subtype === preferredSubtype);
+  return preferred || generated[variant % generated.length];
 }
 
-function pickQuestion(category, targetDifficulty, usedIds, variant) {
+function pickQuestion(category, targetDifficulty, usedIds, variant, preferredSubtype) {
   if (category === "Numerisk") {
-    return numericVariant(targetDifficulty, variant);
+    return numericVariant(targetDifficulty, variant, preferredSubtype);
   }
 
   if (category === "Verbal") {
-    return verbalVariant(targetDifficulty, variant);
+    return verbalVariant(targetDifficulty, variant, preferredSubtype);
   }
 
   if (category === "Logisk") {
-    return logicVariant(targetDifficulty, variant);
+    return logicVariant(targetDifficulty, variant, preferredSubtype);
   }
 
   const available = QUESTION_BANK[category].filter((question) => !usedIds.has(question.id));
@@ -757,6 +827,30 @@ function pickQuestion(category, targetDifficulty, usedIds, variant) {
   return cloneQuestion(choice, category);
 }
 
+function createEmptySubtypeScores() {
+  return {};
+}
+
+function incrementSubtypeScore(store, subtype, correct) {
+  if (!store[subtype]) {
+    store[subtype] = { correct: 0, total: 0 };
+  }
+  store[subtype].total += 1;
+  if (correct) {
+    store[subtype].correct += 1;
+  }
+}
+
+function weakestSubtypeFromScores(subtypeScores) {
+  const entries = Object.entries(subtypeScores).filter((entry) => entry[1].total > 0);
+  if (!entries.length) return "Tallmønster";
+  return entries.sort((left, right) => {
+    const leftScore = left[1].correct / left[1].total;
+    const rightScore = right[1].correct / right[1].total;
+    return leftScore - rightScore;
+  })[0][0];
+}
+
 function getPracticeCategories(focusCategory) {
   const others = CATEGORIES.filter((category) => category !== focusCategory);
   if (!focusCategory || others.length !== 2) {
@@ -769,7 +863,7 @@ function getPracticeCategories(focusCategory) {
   ];
 }
 
-function generateQuestions(mode, focusCategory) {
+function generateQuestions(mode, focusTarget) {
   const seed = randomInt(1000, 999999);
   const usedIds = {
     Numerisk: new Set(),
@@ -778,11 +872,20 @@ function generateQuestions(mode, focusCategory) {
   };
 
   if (mode === "practice") {
+    const focusSubtype = focusTarget?.subtype || null;
+    const focusCategory = focusTarget?.category || subtypeCategory(focusSubtype);
     const categories = getPracticeCategories(focusCategory);
     return PRACTICE_LEVELS.map((level, index) => ({
       id: `practice-${index + 1}`,
       mode,
-      ...pickQuestion(categories[index], level, usedIds[categories[index]], index + seed)
+      ...pickQuestion(
+        categories[index],
+        level,
+        usedIds[categories[index]],
+        categories[index] === focusCategory ? index + seed + 11 : index + seed
+        ,
+        categories[index] === focusCategory ? focusSubtype : null
+      )
     }));
   }
 
@@ -791,7 +894,7 @@ function generateQuestions(mode, focusCategory) {
     return {
       id: `full-${index + 1}`,
       mode,
-      ...pickQuestion(category, level, usedIds[category], index + seed)
+      ...pickQuestion(category, level, usedIds[category], index + seed, null)
     };
   });
 }
@@ -830,6 +933,10 @@ function buildResults(answers, sessionType) {
     }
     return accumulator;
   }, createEmptyCategoryScores());
+  const subtypeScores = answers.reduce((accumulator, item) => {
+    incrementSubtypeScore(accumulator, item.subtype, item.correct);
+    return accumulator;
+  }, createEmptySubtypeScores());
 
   const rankedCategories = Object.entries(categoryScores).sort((left, right) => {
     const leftScore = left[1].total ? left[1].correct / left[1].total : 0;
@@ -847,8 +954,10 @@ function buildResults(answers, sessionType) {
     percent,
     strongestCategory: strongest ? strongest[0] : "Ingen ennå",
     weakestCategory: weakest ? weakest[0] : "Numerisk",
+    weakestSubtype: weakestSubtypeFromScores(subtypeScores),
     highestLevel: highestLevel ? `Nivå ${highestLevel}` : "Startnivå",
     categoryScores,
+    subtypeScores,
     summary: getSummary(percent),
     feedback: getFeedback(percent, weakest ? weakest[0] : "Numerisk", sessionType)
   };
@@ -862,7 +971,8 @@ function buildProfileInsights(profile) {
       averagePercent: 0,
       latestPercent: null,
       bestPercent: null,
-      weakestCategory: "Numerisk"
+      weakestCategory: "Numerisk",
+      weakestSubtype: "Tallmønster"
     };
   }
 
@@ -879,6 +989,16 @@ function buildProfileInsights(profile) {
     });
     return accumulator;
   }, createEmptyCategoryScores());
+  const subtypeScores = history.reduce((accumulator, session) => {
+    Object.entries(session.subtypeScores || {}).forEach(([subtype, score]) => {
+      if (!accumulator[subtype]) {
+        accumulator[subtype] = { correct: 0, total: 0 };
+      }
+      accumulator[subtype].correct += score.correct;
+      accumulator[subtype].total += score.total;
+    });
+    return accumulator;
+  }, createEmptySubtypeScores());
 
   const weakestCategory = Object.entries(categoryScores).sort((left, right) => {
     const leftScore = left[1].total ? left[1].correct / left[1].total : 1;
@@ -886,7 +1006,14 @@ function buildProfileInsights(profile) {
     return leftScore - rightScore;
   })[0]?.[0] || "Numerisk";
 
-  return { sessions: history.length, averagePercent, latestPercent, bestPercent, weakestCategory };
+  return {
+    sessions: history.length,
+    averagePercent,
+    latestPercent,
+    bestPercent,
+    weakestCategory,
+    weakestSubtype: weakestSubtypeFromScores(subtypeScores)
+  };
 }
 
 function formatDateLabel(isoString) {
@@ -995,7 +1122,7 @@ function renderHome() {
   elements.welcomeCopy.textContent = "Full test gir bred trening. Fokusøkt vekter spørsmål mot kategorien du historisk har slitt mest med.";
   elements.insightBox.classList.remove("hidden");
   elements.insightText.textContent = insights.sessions
-    ? `Siste resultat ${insights.latestPercent}%, beste resultat ${insights.bestPercent}% og mest behov for øving i ${insights.weakestCategory.toLowerCase()}.`
+    ? `Siste resultat ${insights.latestPercent}%, beste resultat ${insights.bestPercent}% og mest behov for øving i ${insights.weakestCategory.toLowerCase()} - spesielt ${insights.weakestSubtype.toLowerCase()}.`
     : "Ingen lagrede tester ennå. Start med en full test for å bygge første profil.";
   elements.startFullButton.disabled = false;
   elements.startPracticeButton.disabled = false;
@@ -1011,6 +1138,7 @@ function renderQuestion() {
   elements.progressBar.style.width = `${progress}%`;
   elements.difficultyPill.textContent = `Nivå ${question.difficulty}`;
   elements.categoryChip.textContent = question.category;
+  elements.subtypeChip.textContent = question.subtype;
   elements.timeChip.textContent = `Anbefalt: ${question.recommendedTime} sek`;
   elements.questionText.textContent = question.title;
   elements.questionPrompt.textContent = question.prompt;
@@ -1064,7 +1192,10 @@ function startSession(type, focusCategory) {
   if (!activeProfile) return;
   const insights = buildProfileInsights(activeProfile);
   state.sessionType = type;
-  state.questions = generateQuestions(type, focusCategory || insights.weakestCategory);
+  const focusTarget = type === "practice"
+    ? (focusCategory || { category: insights.weakestCategory, subtype: insights.weakestSubtype })
+    : null;
+  state.questions = generateQuestions(type, focusTarget);
   state.currentIndex = 0;
   state.answers = [];
   state.lastResult = null;
@@ -1113,6 +1244,7 @@ function handleNext() {
   state.answers.push({
     id: question.id,
     category: question.category,
+    subtype: question.subtype,
     difficulty: question.difficulty,
     correct: state.selectedOption === question.answer
   });
@@ -1149,11 +1281,13 @@ elements.profileNameInput.addEventListener("keydown", (event) => {
 elements.startFullButton.addEventListener("click", () => startSession("full"));
 elements.startPracticeButton.addEventListener("click", () => {
   const insights = buildProfileInsights(getActiveProfile());
-  startSession("practice", insights.weakestCategory);
+  startSession("practice", { category: insights.weakestCategory, subtype: insights.weakestSubtype });
 });
 elements.nextButton.addEventListener("click", handleNext);
 elements.practiceFromResultButton.addEventListener("click", () => {
-  if (state.lastResult) startSession("practice", state.lastResult.weakestCategory);
+  if (state.lastResult) {
+    startSession("practice", { category: state.lastResult.weakestCategory, subtype: state.lastResult.weakestSubtype });
+  }
 });
 elements.restartFullButton.addEventListener("click", () => startSession("full"));
 elements.backHomeButton.addEventListener("click", renderHome);
